@@ -1,0 +1,280 @@
+Инструкция для установки системы сборки Frontend'a - Gulp.
+( Очень хорошая статья http://www.creative-seo.ru/blog/gulp-dlya-nachinayushchih/ )
+(Если переносятся файлы на другой компьютер, чтоб сгенерировать папку node_modules пишем в терминале открытой папки npm i)
+
+Gulp пишется на Java Script. По дэфолту его нет на компьютере, поетому нужно установить. 
+
+(Чтоб проверить если node.js на компьютере нужно зайти в терминал (Shift + Правая кнопка мыши -> Открыть окно команд) и ввести node -v | так же проверяем установлен ли Gulp: gulp -v)
+
+1) Идем на https://nodejs.org/uk/ , качаем версию "рекомендованную большинству" (Устанавливается как обычная программа);
+
+2) Cоздаем папку project_gulp, после этого Gulp нужно установить на компьютер через терминал (из пакетного менеджера node.js который называется npm). В терминале пишем npm i gulp -g (устанавливаем gulp глобально на компьютер, чтоб была последняя версия);
+
+3) Открываем в папке project_gulp терминал, и инициализируем новый проект на Gulp`e - пишем npm init и отвечаем на все вопросы (enter) и в конце пишем Y (появился файл package.json);
+
+4) Теперь устанавливаем Gulp локально - в терминале пишем: npm i gulp --save-dev (генерируется папка node_modules, и записывается версия Gulp в файле package.json);
+
+5) В папке project_gulp создаем текстовый документ gulpfile.js (пока что пустой);
+
+6) В папке project_gulp создаем папку app, а в ней создаем index.html + папку img + папку fonts + папку scss;
+
+7) В папке project_gulp создаем файл gulpfile.js (для наших тасков и переменных плагинов)
+
+8) В файле gulpfile.js обьявляем переменную gulp: 
+	
+	var gulp = require('gulp');
+
+9) Устанавливаем gulp-sass: 
+В терминале: npm i gulp-sass --save-dev 
+
+10) Пишем переменну для gulp-sass:
+
+В файле gulpfile.js (чтоб не писать постоянно 'var' в конце строки ставим запятую): 
+	
+	var gulp = require('gulp'),
+		scss = require('gulp-sass');
+
+11) Пишем таск для наших плагинов (то что они будут выполнять и куда отправлять файлы)
+
+	gulp.task('scss', function(){
+		return gulp.src('app/scss/**/*.scss')  
+	});
+
+-  (src - поиск файла) в кавычках пишем путь к файлу scss
+
+12) Пишем pipe (указывает что делать с найденным файлом/ми) для нашего таска:
+	
+ 	.pipe(scss())
+
+13) Пишем pipe куда будем выкидывать обработанный файл:
+
+	.pipe(gulp.dest('app/css'))
+
+14) Пишем таск watch (для слежения за проектом):
+
+	gulp.task('watch', function(){
+		gulp.watch('app/scss/**/*.scss', gulp.parallel('scss'))
+	});
+
+	Теперь scss переводится в css 
+
+15) Для минифицирования css кода можем в таск gulp.task('scss') в .pipe(scss()) добавить (добавляем в круглые скобки , т.е. <!-- .pipe(scss({outputStyle: 'expanded'})) -->  ) {outputStyle: 'expanden'}  (или compressed) :
+	
+	gulp.task('scss', function(){
+		return gulp.src('app/scss/**/*.scss')
+			  .pipe(scss, ({outputStyle: 'expanded'})
+			  .pipe(gulp.dest('app/css'))
+	});
+
+Таск для watch всегда пишется последним!
+
+16) Устанавливаем плагин browser-sync: 
+
+В терминале: npm i browser-sync --save-dev
+
+17) Создаем переменную для browser-sync:
+
+	var gulp = require('gulp'),
+		scss = require('gulp-sass'),
+		browserSync = require('browser-sync');
+
+18) Пишем таск для browser-sync:
+
+	gulp.task('browser-sync', function(){
+		browserSync.init({
+			server: {
+				baseDir: 'app'
+			}
+		})
+	});
+
+И пишем еще один .pipe в таск scss:
+
+		gulp.task('scss', function(){
+		return gulp.src('app/scss/**/*.scss')
+			  .pipe(scss, ({outputStyle: 'expanded'})
+			  .pipe(gulp.dest('app/css'))
+			  .pipe(browserSync.reload({stream: true}))
+	});
+
+19) Пишем таск по дэфолту (чтоб запускалось все в один момент):
+
+	gulp.task('default', gulp.parallel('scss','browser-sync', 'watch'));
+
+	(Таск по дэфолту пишется в самый последний момент после watch!)
+
+20) Чтоб все работало вместе и без остановки пишем в таск watch еще несколько задач (для проверки html и js):
+
+	gulp.task('watch', function(){
+    	gulp.watch('app/scss/**/*.scss', gulp.parallel('scss'))
+    	gulp.watch('app/js/**/*.js', gulp.parallel('script'))
+    	gulp.watch('app/*.html', gulp.parallel('code'))
+	});
+
+21) Чтоб все работало корректно нужно добавить таски для js и для html, в них мы запишем gulp.src (найти файлы) и .pipe(browserSync.reload({stram: true})) (для перезагрузки страници) :
+
+	gulp.task('script', function(){
+		return gulp.src('app/js/**/*.js')
+			.pipe(browserSync.reload({stream:true}))
+	});
+
+	gulp.task('code', function(){
+		return gulp.src('app/*.html')
+			.pipe(browserSync.reload({stram: true}))
+	});
+
+22) Устанавливаем плагин bower (для скачивания js сразу через терминал):
+Для работы bower нужен Git (https://git-scm.com/download устанавливается как обычная программа)
+
+В терминале папки нашего проекта (project_gulp) пишем: npm i bower -g
+
+23) Если зайти в документацию bower то увидим, что для его работы нужно создать файл .bowerrc (в Windows нельзя создавать файлы без названий, поетому создавать файл нужно через свой редактор кода ctrl+N)
+
+	В файле .bowerrc пишем:
+
+		{
+			"directory":"app/libs/" 
+		}
+
+Этот файл будет указывать куда качаться всем плагинам которые мы захотим скачать через bower
+
+24) Для проверки можем установить slick-carousel, для этого в терминале (желательно Git Bush) пишем:
+
+	bower i slick-carousel
+
+И после этого в нашей папке libs добавятся jqurey + slick-carousel
+
+25) Так же устанавливаем плагин magnific-popup:
+
+	bower i magnific-popup
+
+26) Создаем папку js (app/js)
+
+27) Для работы плагинов которые находятся в папке libs нужно установить доп.плагины в файл gulpfile.js:
+
+	npm i gulp-uglifyjs gulp-concat --save-dev
+
+gulp-uglifyjs - плагин для сжатия js
+gulp-concat - плагин для конкатинации файлов (все файлы соединяются в один)
+
+28) Для этих плагинов пишем им переменные в файле gulpfile.js:
+
+	var gulp = require('gulp'),
+		scss = require('gulp-sass'),
+		browserSync = require('browser-sync'),
+		uglifyjs = require('gulp-uglifyjs'),
+		concat = require('gulp-concat');	
+
+29) Пишем таск для этих плагинов:
+
+	gulp.task('js', function(){
+		return gulp.src(['app/libs/slick-carousel/slick/slick.js'],['app/libs/magnific-popup/dist/jquery.magnific-popup.js'])
+	});
+
+30) В этот же таск пишем два .pipe (для uglifyjs и concat) и .pipe(gulp.dest('app/js')) для того чтобы указать куда разместить наши файлы:
+
+	gulp.task('js', function(){
+		return gulp.src(['app/libs/slick-carousel/slick/slick.js'],['app/libs/magnific-popup/dist/jquery.magnific-popup.js'])
+			.pipe(concat('libs.min.js'))
+			.pipe(uglifyjs())
+			.pipe(gulp.dest('app/js'))
+	});
+
+
+31) В конце body подключаем скрипты:
+	
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script> 
+	<script src="js/libs.min.js"></script>
+	<script src="js/main.js"></script>  
+
+32) В папке scss создаем файл libs.scss и в нем указываем:
+
+@import "app/libs/magnific-popup/dist/magnific-popup";
+@import "app/libs/slick-carousel/slick/slick";
+
+(в app/libs/slick-carousel/slick/slick вручную нужно удалить файл slick.scss)
+Это нужно для переноса и обработки файлов в папку css (зайдет в файл app/libs/magnific-popup/dist/magnific-popup.css и скопирует его в папку css, переносит все туда, куда gulpfile.js скажет)
+
+33) Переносим из файла libs.scss в style.scss для того чтоб это все было в одном файле, файл libs.scss можно удалить. Папку css тоже можно удалить она сгенерируется самостоятельно.
+
+33) Устанавливаем плагин gulp-rename для добавления суффиксов/префиксов в файлы:
+В терминале: npm i gulp-rename --save-dev
+
+34) Создаем для этого плагина переменную: 
+
+	var gulp = require('gulp'),
+		scss = require('gulp-sass'),
+		browserSync = require('browser-sync'),
+		uglifyjs = require('gulp-uglifyjs'),
+		concat = require('gulp-concat'),
+		rename = require('gulp-rename');
+
+35) Для этого плагина пишем .pipe в таске gulp.task('scss'):
+
+		gulp.task('scss', function(){
+		return gulp.src('app/scss/**/*.scss')
+			  .pipe(scss, ({outputStyle: 'expanded'})
+			  .pipe(rename({suffix: '.min'}))
+			  .pipe(gulp.dest('app/css'))
+			  .pipe(browserSync.reload({stream: true}))
+	});
+
+36) Устанавливаем плагин gulp-autoprefixer:
+В терминал: npm i gulp-autoprefixer --save-dev
+
+37) Задаем переменную для gulp-autoprefixer
+
+	var gulp = require('gulp'),
+		scss = require('gulp-sass'),
+		browserSync = require('browser-sync'),
+		uglifyjs = require('gulp-uglifyjs'),
+		concat = require('gulp-concat'),
+		rename = require('gulp-rename'),
+		autoprefixer = require('gulp-autoprefixer');
+
+38) Для этого плагина так же пишем .pipe в таске gulp.task('scss'):
+
+		gulp.task('scss', function(){
+		return gulp.src('app/scss/**/*.scss')
+			  .pipe(scss, ({outputStyle: 'expanded'})
+			  .pipe(autoprefixer({cascade: false}))
+			  .pipe(rename({suffix: '.min'}))
+			  .pipe(gulp.dest('app/css'))
+			  .pipe(browserSync.reload({stream: true}))
+	});
+
+39) Чистим наш gulp:
+Таск gulp.task('js') комментируем, раскомментируем тогда, когда понадобится.
+В папке с нашим проектом удаляем package.lock.json.
+Удаляем папку node_modules.
+Удаляем папку css.
+Удаляем libs.min.js
+Удаляем папку libs
+Переменовываем папку в start-gulp
+
+40) Устанавливаем normalize.css:
+В терминале: npm i normalize.css --save-dev
+В файл style.scss пишем:
+@import "node_modules/normalize.css/normalize";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Идем на https://gulpjs.com/ и заходим в раздел Plugins
